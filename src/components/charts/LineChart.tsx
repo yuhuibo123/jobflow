@@ -29,7 +29,6 @@ export default function LineChart({ data, width = 800, height = 200 }: LineChart
     ` L ${getX(0)} ${paddingTop + chartHeight} Z`;
 
   const gridLines = [0, 3, 6, 10];
-  const minPoint = data.reduce((min, d, i) => (d.score < min.score ? { ...d, i } : min), { ...data[0], i: 0 });
 
   return (
     <div className="w-full overflow-x-auto">
@@ -60,8 +59,8 @@ export default function LineChart({ data, width = 800, height = 200 }: LineChart
 
         <defs>
           <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F5A623" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#F5A623" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#FFD100" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#FFD100" stopOpacity="0.02" />
           </linearGradient>
         </defs>
 
@@ -70,7 +69,7 @@ export default function LineChart({ data, width = 800, height = 200 }: LineChart
         <path
           d={pathD}
           fill="none"
-          stroke="#F5A623"
+          stroke="#FFD100"
           strokeWidth="2.5"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -84,7 +83,7 @@ export default function LineChart({ data, width = 800, height = 200 }: LineChart
               cx={getX(i)}
               cy={getY(d.score)}
               r={isMin ? 5 : 4}
-              fill={isMin ? '#EF4444' : '#F5A623'}
+              fill={isMin ? '#EF4444' : '#FFD100'}
               stroke="white"
               strokeWidth="2"
             />

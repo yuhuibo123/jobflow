@@ -131,7 +131,7 @@ export const applications: Application[] = [
     id: '9',
     company: '美团',
     companyInitial: '美',
-    companyColor: '#F5A623',
+    companyColor: '#FFD100',
     position: '产品经理',
     department: '到店业务',
     status: 'interviewing',
@@ -210,7 +210,7 @@ export const reviews: ReviewEntry[] = [
     summary: '面试官节奏很快，问了三个 case。我第二题骑手调度答得有点虚。',
     tags: ['业务面', '偏 Case'],
     score: '稳',
-    scoreColor: '#F59E0B',
+    scoreColor: '#FFD100',
     completed: 25,
     isHot: true,
     result: 'pending',
@@ -386,7 +386,7 @@ export const scheduleEvents: ScheduleEvent[] = [
 export const insightsData = {
   passRates: [
     { category: '行为面', rate: 83, color: '#22C55E' },
-    { category: '业务 Case', rate: 60, color: '#F59E0B' },
+    { category: '业务 Case', rate: 60, color: '#FFD100' },
     { category: '技术/数据', rate: 33, color: '#F97316' },
     { category: 'HR 面', rate: 95, color: '#22C55E' },
   ],

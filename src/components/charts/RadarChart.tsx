@@ -87,7 +87,7 @@ export default function RadarChart({ data, size = 200 }: RadarChartProps) {
         <polygon
           points={avgPolygon}
           fill="rgba(245, 166, 35, 0.08)"
-          stroke="#FDE68A"
+          stroke="#FFE36A"
           strokeWidth="1.5"
           strokeDasharray="4 2"
         />
@@ -95,7 +95,7 @@ export default function RadarChart({ data, size = 200 }: RadarChartProps) {
         <polygon
           points={valuePolygon}
           fill="rgba(245, 166, 35, 0.25)"
-          stroke="#F5A623"
+          stroke="#FFD100"
           strokeWidth="2"
         />
 
@@ -103,7 +103,7 @@ export default function RadarChart({ data, size = 200 }: RadarChartProps) {
           const ratio = d.value / 100;
           const pt = getPoint(i, r * ratio);
           return (
-            <circle key={i} cx={pt.x} cy={pt.y} r={3} fill="#F5A623" />
+            <circle key={i} cx={pt.x} cy={pt.y} r={3} fill="#FFD100" />
           );
         })}
 
@@ -127,11 +127,11 @@ export default function RadarChart({ data, size = 200 }: RadarChartProps) {
       </svg>
       <div className="flex items-center gap-4 text-xs text-[#9C8B78]">
         <span className="flex items-center gap-1.5">
-          <span className="w-4 h-0.5 bg-[#F5A623] inline-block rounded" />
+          <span className="w-4 h-0.5 bg-[#FFD100] inline-block rounded" />
           实线是你
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-4 border-t border-dashed border-[#FDE68A] inline-block" />
+          <span className="w-4 border-t border-dashed border-[#FFE36A] inline-block" />
           虚线是同期候选人均值
         </span>
       </div>

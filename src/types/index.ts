@@ -4,6 +4,7 @@ export type ApplicationStatus = 'interested' | 'applied' | 'written_test' | 'int
 
 export interface Application {
   id: string;
+  isDemo?: boolean;
   company: string;
   companyInitial: string;
   companyColor: string;
@@ -26,6 +27,7 @@ export interface Application {
 
 export interface ReviewEntry {
   id: string;
+  isDemo?: boolean;
   company: string;
   position: string;
   stage: string;
@@ -51,6 +53,7 @@ export interface ReviewEntry {
 
 export interface ScheduleEvent {
   id: string;
+  isDemo?: boolean;
   date: number;
   weekday: string;
   time?: string;
