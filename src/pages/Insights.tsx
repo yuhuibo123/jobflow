@@ -1,212 +1,223 @@
 import { useMemo } from 'react';
-import { insightsData } from '../data/mockData';
 import HorizontalBarChart from '../components/charts/BarChart';
 import RadarChart from '../components/charts/RadarChart';
 import LineChart from '../components/charts/LineChart';
-import { useApplications } from '../hooks/useApplications';
-import { useReviews } from '../hooks/useReviews';
+import { useJobFlow } from '../store/useJobFlow';
+import { calculateInsights } from '../lib/insightCalculations';
+import { hasSupabaseConfig } from '../lib/supabaseClient';
+
+function EmptyState({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-[#E8E2D9] bg-[#FBF8F3] p-5">
+      <div className="text-[#1C1917] text-sm font-semibold mb-1">{title}</div>
+      <p className="text-[#9C8B78] text-sm leading-relaxed">{message}</p>
+    </div>
+  );
+}
+
+function formatValue(value: number | null, suffix = '') {
+  return value === null ? '待计算' : `${value}${suffix}`;
+}
 
 export default function Insights() {
-  const { applications, loading: applicationsLoading, error: applicationsError } = useApplications();
-  const { reviews, loading: reviewsLoading, error: reviewsError } = useReviews();
+  const { applications, reviews, scheduleEvents, offerComparisons, loading } = useJobFlow();
 
-  const passRates = useMemo(() => {
-    const calcRate = (matcher: (tags: string[], stage: string) => boolean, fallback: number) => {
-      const matched = reviews.filter((review) => matcher(review.tags, review.stage));
-      if (matched.length === 0) return fallback;
-      const passed = matched.filter((review) => review.result === 'pass').length;
-      return Math.round((passed / matched.length) * 100);
-    };
+  const insights = useMemo(
+    () => calculateInsights({ applications, reviews, scheduleEvents, offers: offerComparisons }),
+    [applications, reviews, scheduleEvents, offerComparisons]
+  );
 
-    return [
-      {
-        category: '行为面',
-        rate: calcRate((tags) => tags.some((tag) => tag.includes('行为')), 83),
-        color: '#22C55E',
-      },
-      {
-        category: '业务 Case',
-        rate: calcRate((tags) => tags.some((tag) => tag.toLowerCase().includes('case')), 60),
-        color: '#FFD100',
-      },
-      {
-        category: '技术/数据',
-        rate: calcRate((tags, stage) => tags.some((tag) => tag.includes('数据') || tag.includes('技术')) || stage.includes('技术'), 33),
-        color: '#F97316',
-      },
-      {
-        category: 'HR 面',
-        rate: calcRate((tags, stage) => tags.some((tag) => tag.toUpperCase().includes('HR')) || stage.toUpperCase().includes('HR'), 95),
-        color: '#22C55E',
-      },
-    ];
-  }, [reviews]);
+  const summaryCards = [
+    { label: '申请总数', value: insights.summary.totalApplications, sub: 'applications' },
+    { label: '已投递', value: insights.summary.submittedCount, sub: 'applications + timeline' },
+    { label: '面试中', value: insights.summary.interviewCount, sub: 'applications + scheduleEvents' },
+    { label: 'Offer', value: insights.summary.offerCount, sub: 'applications.status' },
+    { label: '已拒', value: insights.summary.rejectedCount, sub: 'applications.status' },
+    { label: '通过率', value: `${insights.summary.passRate}%`, sub: 'Offer / 已投递' },
+  ];
 
-  const emotionCurve = useMemo(() => {
-    const scoredReviews = reviews
-      .filter((review) => typeof review.moodScore === 'number')
-      .map((review) => ({
-        date: review.date.split(' ').slice(0, 3).join(' ') || review.company,
-        score: review.moodScore || 0,
-      }));
-
-    return scoredReviews.length >= 2 ? scoredReviews : insightsData.emotionCurve;
-  }, [reviews]);
-
-  const radarData = useMemo(() => {
-    const averageCompletion = reviews.length
-      ? Math.round(reviews.reduce((sum, review) => sum + review.completed, 0) / reviews.length)
-      : 0;
-    const passCount = reviews.filter((review) => review.result === 'pass').length;
-    const passRate = reviews.length ? Math.round((passCount / reviews.length) * 100) : 0;
-    const activeCount = applications.filter((item) => item.status !== 'rejected').length;
-
-    return insightsData.radarData.map((item) => {
-      if (item.label === '结构化表达') return { ...item, value: Math.max(45, averageCompletion) };
-      if (item.label === '追问应变') return { ...item, value: Math.max(40, passRate) };
-      if (item.label === '项目深度') return { ...item, value: Math.min(95, 45 + activeCount * 2) };
-      return item;
-    });
-  }, [applications, reviews]);
-
-  const keyFindings = useMemo(() => {
-    const activeApplications = applications.filter((item) => item.status !== 'rejected').length;
-    const pendingReviews = reviews.filter((review) => review.completed < 100).length;
-    const failedReviews = reviews.filter((review) => review.result === 'fail').length;
-
-    return [
-      {
-        type: 'weakness',
-        label: '反复踩的坑',
-        title: pendingReviews > 0 ? `还有 ${pendingReviews} 场复盘没有补完整` : '复盘完整度保持得不错',
-        evidence: `证据：当前共有 ${reviews.length} 条复盘，其中 ${pendingReviews} 条完成度低于 100%`,
-        note: pendingReviews > 0 ? '复盘没有及时补完时，后面很难再还原追问细节。' : '完整复盘越多，后面的洞察会越准。',
-        suggestion: pendingReviews > 0 ? '优先打开复盘库，把 STAR 里的空项补齐。' : '继续保持，下一步可以让 AI 帮你总结高频问题。',
-      },
-      {
-        type: 'strength',
-        label: '一个没意识到的优势',
-        title: `你现在有 ${activeApplications} 个机会还在推进`,
-        evidence: `证据：看板中除已拒外，共有 ${activeApplications} 条申请记录`,
-        note: '机会池还在滚动，说明你不是只有单点机会。',
-        suggestion: '把精力优先放在面试中和笔试阶段，不要平均用力。',
-      },
-      {
-        type: 'timing',
-        label: '节奏提示',
-        title: failedReviews > 0 ? `有 ${failedReviews} 场失败经历值得沉淀` : '目前失败样本不多，先积累复盘',
-        evidence: `证据：复盘库中结果为未通过的记录有 ${failedReviews} 条`,
-        note: failedReviews > 0 ? '失败复盘通常比通过复盘更能暴露真实短板。' : '样本越多，趋势会越明显。',
-        suggestion: failedReviews > 0 ? '把失败场景单独整理成面试前检查清单。' : '每场面试结束后尽量当天补一条复盘。',
-      },
-    ];
-  }, [applications, reviews]);
-
-  const findingStyles = {
-    weakness: {
-      dot: 'bg-[#EF4444]',
-      label: 'text-[#EF4444]',
-      bg: 'bg-white',
-    },
-    strength: {
-      dot: 'bg-[#22C55E]',
-      label: 'text-[#22C55E]',
-      bg: 'bg-white',
-    },
-    timing: {
-      dot: 'bg-[#FFD100]',
-      label: 'text-[#FFD100]',
-      bg: 'bg-white',
-    },
+  const moodCopy: Record<string, string> = {
+    low: '最近能量偏低，先把复盘拆小，只补事实和下一步，不急着下结论。',
+    watch: '状态有波动，建议把面试和休息错开，保留恢复时间。',
+    stable: '状态相对稳定，可以继续按当前节奏推进。',
   };
+  const lowestMood = insights.mood.chart.reduce<{ date: string; score: number; company?: string } | null>(
+    (lowest, item) => (!lowest || item.score < lowest.score ? item : lowest),
+    null
+  );
 
   return (
     <div className="pt-16 min-h-screen bg-[#FBF8F3]">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-        <div className="mb-5 rounded-2xl border border-[#FFE36A] bg-[#FFFBEA] px-4 py-3 text-sm text-[#6B5E4E]">
-          洞察会基于示例数据和你新增的真实数据库记录一起计算。
-          {(applicationsLoading || reviewsLoading) && <span className="ml-2 text-[#7A5A00]">正在加载数据库记录...</span>}
-          {(applicationsError || reviewsError) && <span className="ml-2 text-[#EF4444]">{applicationsError || reviewsError}</span>}
-        </div>
-        <div className="text-[#9C8B78] text-sm mb-1">自己看不见的问题，数据能帮你看见</div>
+        {loading ? (
+          <div className="mb-5 rounded-2xl border border-[#E8E2D9] bg-white px-4 py-3 text-sm text-[#9C8B78] flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-full bg-[#FFD100] animate-pulse" />
+            正在从数据库加载数据，稍等一下…
+          </div>
+        ) : (
+          <div className="mb-5 rounded-2xl border border-[#FFE36A] bg-[#FFFBEA] px-4 py-3 text-sm text-[#6B5E4E]">
+            {hasSupabaseConfig
+              ? `数据已从 Supabase 加载，刷新后保持稳定。当前读取：${applications.length} 条申请、${reviews.length} 条复盘、${scheduleEvents.length} 条日程。`
+              : '当前为演示模式，数据来自本地 mock，未连接数据库，刷新后重置。'}
+          </div>
+        )}
+
+        <div className="text-[#9C8B78] text-sm mb-1">数据够了再下判断</div>
         <h1 className="text-2xl md:text-4xl font-bold text-[#1C1917] mb-2 leading-tight">
-          你过去 30 天里，有几个规律你可能没注意到
+          你的投递、复盘和 Offer 会自动汇总成判断依据
         </h1>
-        <p className="text-[#9C8B78] text-sm mb-8">基于 {reviews.length} 次面试复盘 + {applications.length} 条申请记录</p>
+        <p className="text-[#9C8B78] text-sm mb-8">
+          当前追溯源：{insights.summary.trace.applications} 条申请、{insights.summary.trace.reviews} 条复盘、{insights.summary.trace.scheduleEvents} 条日程、{insights.summary.trace.offers} 条 Offer 备注
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+          {summaryCards.map((item) => (
+            <div key={item.label} className="bg-white rounded-2xl border border-[#F0EBE4] p-4">
+              <div className="text-[#9C8B78] text-xs mb-2">{item.label}</div>
+              <div className="text-2xl font-bold text-[#1C1917]">{item.value}</div>
+              <div className="text-[#C5BDB5] text-[11px] mt-1">{item.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-2xl border border-[#F0EBE4] p-5">
+            <div className="text-[#9C8B78] text-xs font-medium mb-1">复盘完成率</div>
+            <div className="text-3xl font-bold text-[#1C1917] mb-1">
+              {insights.summary.reviewCompletionRate}%
+            </div>
+            <p className="text-[#9C8B78] text-xs">
+              {insights.reviewStats.completed} / {insights.reviewStats.total} 条复盘已完成
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-[#F0EBE4] p-5">
+            <div className="text-[#9C8B78] text-xs font-medium mb-1">平均复盘评分</div>
+            <div className="text-3xl font-bold text-[#1C1917] mb-1">
+              {formatValue(insights.summary.averageReviewScore, ' / 5')}
+            </div>
+            <p className="text-[#9C8B78] text-xs">
+              来自 {insights.reviewStats.scored} 条带能力评分的复盘
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl border border-[#F0EBE4] p-5">
+            <div className="text-[#9C8B78] text-xs font-medium mb-1">平均 mood_score</div>
+            <div className="text-3xl font-bold text-[#1C1917] mb-1">
+              {formatValue(insights.summary.averageMoodScore, ' / 10')}
+            </div>
+            <p className="text-[#9C8B78] text-xs">
+              来自 {insights.mood.scoredCount} 条带情绪评分的复盘
+            </p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-2xl border border-[#F0EBE4] p-6">
-            <div className="flex items-start justify-between mb-1">
+            <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <div className="text-[#9C8B78] text-xs font-medium mb-1">01 / 通过率</div>
-                <h3 className="text-xl font-bold text-[#1C1917]">不同题型的通过率差得挺远</h3>
+                <div className="text-[#9C8B78] text-xs font-medium mb-1">01 / 流程阶段转化</div>
+                <h3 className="text-xl font-bold text-[#1C1917]">从申请状态计算</h3>
               </div>
-              <span className="text-[10px] bg-[#FEF2F2] text-[#EF4444] border border-[#FECACA] px-2 py-0.5 rounded font-medium">
-                WEAK POINT
+              <span className="text-[10px] bg-[#F5F0EA] text-[#6B5E4E] border border-[#EDE8E1] px-2 py-0.5 rounded font-medium">
+                {insights.stageConversion.sourceCount} 条已投递
               </span>
             </div>
-            <p className="text-[#9C8B78] text-sm mb-4">
-              行为面你通过 83%，但一到技术 / 数据题就剩 33%。这不是"运气"，是真的差。
-            </p>
-            <HorizontalBarChart data={passRates} />
+            {insights.stageConversion.unlocked ? (
+              <>
+                <p className="text-[#9C8B78] text-sm mb-4">
+                  阶段转化率基于当前 application 状态和流程步骤计算。
+                </p>
+                <HorizontalBarChart data={insights.stageConversion.chart} />
+              </>
+            ) : (
+              <EmptyState title="还没有投递数据" message="从岗位库投递或手动新增已投递申请后，这里会生成阶段转化。" />
+            )}
           </div>
 
           <div className="bg-white rounded-2xl border border-[#F0EBE4] p-6">
-            <div className="mb-1">
+            <div className="mb-4">
               <div className="text-[#9C8B78] text-xs font-medium mb-1">02 / 能力雷达</div>
-              <h3 className="text-xl font-bold text-[#1C1917]">你的长短板长这样</h3>
+              <h3 className="text-xl font-bold text-[#1C1917]">来自复盘 5 维评分</h3>
             </div>
-            <p className="text-[#9C8B78] text-sm mb-4">实线是你，虚线是同期候选人均值</p>
-            <div className="flex justify-center">
-              <RadarChart data={radarData} size={220} />
-            </div>
+            {insights.abilityRadar.unlocked ? (
+              <>
+                <p className="text-[#9C8B78] text-sm mb-4">
+                  已读取 {insights.abilityRadar.scoredCount} 条带评分复盘，按 1-5 分换算。
+                </p>
+                <div className="flex justify-center">
+                  <RadarChart data={insights.abilityRadar.chart} size={220} />
+                </div>
+              </>
+            ) : (
+              <EmptyState
+                title="完成 2 次带评分复盘后解锁"
+                message={`还需要 ${insights.abilityRadar.needed} 次带评分复盘，雷达才有参考价值。`}
+              />
+            )}
           </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-[#F0EBE4] p-6 mb-6">
-          <div className="mb-1">
-            <div className="text-[#9C8B78] text-xs font-medium mb-1">03 / 心情曲线</div>
-            <h3 className="text-xl font-bold text-[#1C1917]">过去 30 天，你的情绪有过一次大掉</h3>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+            <div>
+              <div className="text-[#9C8B78] text-xs font-medium mb-1">03 / 情绪能量</div>
+              <h3 className="text-xl font-bold text-[#1C1917]">过去一段时间，你的状态有起伏</h3>
+              <p className="text-[#9C8B78] text-sm mt-2">
+                {lowestMood
+                  ? `${lowestMood.date} ${lowestMood.company || ''} 那次最低到 ${lowestMood.score} 分，这个点值得单独照顾。`
+                  : '记录几次复盘状态后，这里会显示你的低点和恢复趋势。'}
+              </p>
+            </div>
+            <div className="rounded-xl bg-[#FBF8F3] border border-[#F0EBE4] px-4 py-3 min-w-[220px]">
+              <div className="flex items-center justify-between text-xs text-[#9C8B78] mb-2">
+                <span>平均能量</span>
+                <span>{formatValue(insights.mood.average, ' / 10')}</span>
+              </div>
+              <div className="h-3 rounded-full bg-[#F0EBE4] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#FFD100]"
+                  style={{ width: `${Math.min(100, (insights.mood.average || 0) * 10)}%` }}
+                />
+              </div>
+              <p className="text-[#6B5E4E] text-xs mt-3">{moodCopy[insights.mood.supportLevel]}</p>
+            </div>
           </div>
-          <p className="text-[#9C8B78] text-sm mb-6">
-            2 月 15 日拼多多被拒那天，你神到了 4.0 分 —— 挺过来了
-          </p>
-          <div className="overflow-x-auto -mx-2 px-2"><LineChart data={emotionCurve} width={800} height={220} /></div>
-        </div>
-
-        <div className="mb-6">
-          <div className="text-[#9C8B78] text-xs font-medium mb-1">04 / 关键发现</div>
-          <h3 className="text-xl font-bold text-[#1C1917] mb-4">三条你可能没注意到的规律</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {keyFindings.map((finding, i) => {
-              const style = findingStyles[finding.type as keyof typeof findingStyles];
-              return (
-                <div key={i} className={`${style.bg} rounded-2xl border border-[#F0EBE4] p-5`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-                    <span className={`text-xs font-medium ${style.label}`}>{finding.label}</span>
+          {insights.mood.unlocked ? (
+            <>
+              <p className="text-[#9C8B78] text-sm mb-6">
+                最近趋势：{insights.mood.trend === 'up' ? '回升' : insights.mood.trend === 'down' ? '下降' : '持平'}，来自 {insights.mood.scoredCount} 条复盘。
+              </p>
+              <div className="overflow-x-auto -mx-2 px-2">
+                <LineChart data={insights.mood.chart} width={800} height={220} />
+              </div>
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="rounded-xl bg-[#FBF8F3] border border-[#F0EBE4] p-4">
+                  <div className="text-[#9C8B78] text-xs mb-1">最低点</div>
+                  <div className="text-[#1C1917] text-lg font-bold">
+                    {lowestMood ? `${lowestMood.score} / 10` : '待记录'}
                   </div>
-                  <h4 className="font-bold text-[#1C1917] text-sm leading-snug mb-2">
-                    {finding.title}
-                  </h4>
-                  <p className="text-[#9C8B78] text-xs leading-relaxed mb-3">
-                    <span className="text-[#C5BDB5]">证据：</span>
-                    {finding.evidence.replace('证据：', '')}
-                  </p>
-                  <p className="text-[#6B5E4E] text-xs leading-relaxed mb-3">{finding.note}</p>
-                  <div className="border-t border-[#F5F0EA] pt-3">
-                    <p className="text-[#6B5E4E] text-xs leading-relaxed">
-                      <span className="text-[#FFD100]">✦</span> {finding.suggestion}
-                    </p>
-                  </div>
+                  <p className="text-[#9C8B78] text-xs mt-1">{lowestMood?.company || '还没有足够数据'}</p>
                 </div>
-              );
-            })}
-          </div>
+                <div className="rounded-xl bg-[#FBF8F3] border border-[#F0EBE4] p-4">
+                  <div className="text-[#9C8B78] text-xs mb-1">当前平均</div>
+                  <div className="text-[#1C1917] text-lg font-bold">{formatValue(insights.mood.average, ' / 10')}</div>
+                  <p className="text-[#9C8B78] text-xs mt-1">来自复盘 moodScore</p>
+                </div>
+                <div className="rounded-xl bg-[#FFFBEA] border border-[#FFE36A] p-4">
+                  <div className="text-[#7A5A00] text-xs mb-1">情绪支持</div>
+                  <p className="text-[#6B5E4E] text-sm leading-relaxed">{moodCopy[insights.mood.supportLevel]}</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <EmptyState
+              title="记录 2 次 moodScore 后显示趋势"
+              message={`还需要 ${insights.mood.needed} 次带情绪评分的复盘。`}
+            />
+          )}
         </div>
 
-        <div className="text-center text-[#C5BDB5] text-sm italic py-4">
-          * 数据不是为了打分，是为了让你知道，下一次从哪里改。*
+        <div className="text-center text-[#C5BDB5] text-sm py-4">
+          数据不够时不硬画图，先告诉你还差什么。
         </div>
       </div>
     </div>

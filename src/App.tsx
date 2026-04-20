@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TabType } from './types';
 import Navigation from './components/Navigation';
+import AIAssistant from './components/AIAssistant';
 import Dashboard from './pages/Dashboard';
 import ReviewLibrary from './pages/ReviewLibrary';
 import Insights from './pages/Insights';
@@ -10,6 +11,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [reviewCreateRequest, setReviewCreateRequest] = useState(0);
   const [scheduleCreateRequest, setScheduleCreateRequest] = useState(0);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const openReviewCreate = () => {
     setActiveTab('review');
@@ -32,8 +34,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FBF8F3]">
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} onOpenAssistant={() => setAssistantOpen(true)} />
       <div className="pb-16 md:pb-0">{renderPage()}</div>
+      <AIAssistant open={assistantOpen} onOpen={() => setAssistantOpen(true)} onClose={() => setAssistantOpen(false)} />
     </div>
   );
 }

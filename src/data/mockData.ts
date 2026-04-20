@@ -223,6 +223,7 @@ export const reviews: ReviewEntry[] = [
     nextStep: '先把第二题那个"骑手调度" case 想透，写一版自己满意的答案。',
     moodState: '紧张偏正向',
     moodScore: 6.5,
+    scores: { communication: 3, structure: 3, business: 4, data: 2, ownership: 3, pressure: 3 },
   },
   {
     id: '2',
@@ -239,6 +240,7 @@ export const reviews: ReviewEntry[] = [
     result: 'pass',
     moodState: '平稳',
     moodScore: 7.2,
+    scores: { communication: 4, structure: 4, business: 3, data: 2, ownership: 4, pressure: 3 },
   },
   {
     id: '3',
@@ -255,6 +257,7 @@ export const reviews: ReviewEntry[] = [
     result: 'fail',
     moodState: '低落',
     moodScore: 4.0,
+    scores: { communication: 3, structure: 3, business: 2, data: 2, ownership: 3, pressure: 2 },
   },
   {
     id: '4',
@@ -271,6 +274,7 @@ export const reviews: ReviewEntry[] = [
     result: 'pass',
     moodState: '积极',
     moodScore: 8.0,
+    scores: { communication: 5, structure: 4, business: 4, data: 3, ownership: 4, pressure: 4 },
   },
   {
     id: '5',
@@ -287,6 +291,7 @@ export const reviews: ReviewEntry[] = [
     result: 'pass',
     moodState: '专注',
     moodScore: 7.5,
+    scores: { communication: 4, structure: 4, business: 4, data: 4, ownership: 3, pressure: 4 },
   },
 ];
 
@@ -383,55 +388,3 @@ export const scheduleEvents: ScheduleEvent[] = [
   },
 ];
 
-export const insightsData = {
-  passRates: [
-    { category: '行为面', rate: 83, color: '#22C55E' },
-    { category: '业务 Case', rate: 60, color: '#FFD100' },
-    { category: '技术/数据', rate: 33, color: '#F97316' },
-    { category: 'HR 面', rate: 95, color: '#22C55E' },
-  ],
-  radarData: [
-    { label: '业务理解', value: 85, avg: 70 },
-    { label: '结构化表达', value: 75, avg: 72 },
-    { label: '数据敏感度', value: 45, avg: 68 },
-    { label: '用户共情', value: 80, avg: 65 },
-    { label: '追问应变', value: 55, avg: 70 },
-    { label: '项目深度', value: 50, avg: 75 },
-  ],
-  emotionCurve: [
-    { date: '1/26', score: 7.5 },
-    { date: '1/30', score: 7.8 },
-    { date: '2/3', score: 8.2 },
-    { date: '2/8', score: 7.5 },
-    { date: '2/10', score: 8.0 },
-    { date: '2/15', score: 4.0 },
-    { date: '2/18', score: 7.2 },
-    { date: '2/23', score: 6.5 },
-  ],
-  keyFindings: [
-    {
-      type: 'weakness',
-      label: '反复踩的坑',
-      title: '你在"被追问数据"的场景里，连续 3 次都卡住',
-      evidence: '证据：腾讯一面、拼多多三面、京东笔试 → 都出现在第 25-40 分钟左右',
-      note: '讲项目时容易只讲"做了什么"，但没有准备"为什么是这个数"的二级解释。',
-      suggestion: '下次去面试前，把每个项目的核心指标都准备"如果面试官问为什么"的答案。',
-    },
-    {
-      type: 'strength',
-      label: '一个没意识到的优势',
-      title: '当你被问"项目里最失败的部分"，你的通过率反而最高',
-      evidence: '证据：4/4 次这类问题之后，都进入了下一轮',
-      note: '你失败的时候比讲成功的时候更真诚，面试官能感觉到。',
-      suggestion: '不用刻意藏起失败。但是要注意：讲失败要讲"我学到了什么"，不是只讲"我难过"。',
-    },
-    {
-      type: 'timing',
-      label: '节奏提示',
-      title: '面试集中在周二和周四，你这两天的状态明显更紧',
-      evidence: '证据：周二面试的打分平均 6.8，周三面试平均 7.9',
-      note: '可能和你周一课多、周二下午才固有关。',
-      suggestion: '能协调的话，尽量把重要面试放在周三或周四上午。',
-    },
-  ],
-};

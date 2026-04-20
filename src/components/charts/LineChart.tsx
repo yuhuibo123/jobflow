@@ -104,10 +104,6 @@ export default function LineChart({ data, width = 800, height = 200 }: LineChart
           </text>
         ))}
       </svg>
-      <div className="flex items-center gap-2 mt-2 text-xs text-[#EF4444] ml-10">
-        <div className="w-2 h-2 rounded-full bg-[#EF4444]" />
-        <span>2/15 日拼多多被拒那天，你神到了 4.0 分 —— 挺过来了</span>
-      </div>
     </div>
   );
 }

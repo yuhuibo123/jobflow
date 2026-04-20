@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(sed -n '1,60p' /Users/lixun/Downloads/project/src/store/jobFlowReducer.ts)",
+      "Bash(sed -n '438,530p' /Users/lixun/Downloads/project/src/lib/applicationRepository.ts)",
+      "Bash(npx tsc *)",
+      "Bash(sed -n '19,32p' /Users/lixun/Downloads/project/src/store/jobFlowReducer.ts)",
+      "Bash(sed -n '22,45p' /Users/lixun/Downloads/project/src/pages/Insights.tsx)",
+      "Bash(sed -n '268,360p' /Users/lixun/Downloads/project/src/lib/applicationRepository.ts)",
+      "Bash(sed -n '292,360p' /Users/lixun/Downloads/project/src/lib/applicationRepository.ts)",
+      "Bash(sed -n '238,244p' /Users/lixun/Downloads/project/src/types/index.ts)",
+      "Bash(sed -n '310,322p' /Users/lixun/Downloads/project/src/store/jobFlowReducer.ts)"
     ]
   }
 }

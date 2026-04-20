@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { Search, Bell, LayoutGrid, BookOpen, BarChart2, Calendar } from 'lucide-react';
+import { Search, Bell, LayoutGrid, BookOpen, BarChart2, Calendar, Sparkles } from 'lucide-react';
 import { TabType } from '../types';
 import { applications, reviews, scheduleEvents } from '../data/mockData';
 
 interface NavigationProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  onOpenAssistant: () => void;
 }
 
 const tabs: { id: TabType; label: string }[] = [
   { id: 'dashboard', label: '看板' },
-  { id: 'review', label: '复盘库' },
-  { id: 'insights', label: '洞察' },
+  { id: 'review', label: '复盘' },
   { id: 'schedule', label: '日程' },
+  { id: 'insights', label: '洞察' },
 ];
 
-export default function Navigation({ activeTab, onTabChange }: NavigationProps) {
+export default function Navigation({ activeTab, onTabChange, onOpenAssistant }: NavigationProps) {
   const [openTip, setOpenTip] = useState<'notifications' | 'profile' | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [query, setQuery] = useState('');
@@ -143,6 +144,14 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
         <span className="text-[#C5BDB5] text-xs border border-[#E8E2D9] rounded px-1">⌘ K</span>
       </button>
 
+      <button
+        onClick={onOpenAssistant}
+        className="hidden md:flex items-center gap-1.5 rounded-lg bg-[#1C1917] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#2D2420]"
+      >
+        <Sparkles size={14} />
+        AI
+      </button>
+
       <div className="hidden md:block relative">
         <button
           onClick={() => setOpenTip((current) => current === 'notifications' ? null : 'notifications')}
@@ -189,9 +198,9 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#FBF8F3] border-t border-[#E8E2D9] flex">
         {[
           { id: 'dashboard' as TabType, label: '看板', Icon: LayoutGrid },
-          { id: 'review' as TabType, label: '复盘库', Icon: BookOpen },
-          { id: 'insights' as TabType, label: '洞察', Icon: BarChart2 },
+          { id: 'review' as TabType, label: '复盘', Icon: BookOpen },
           { id: 'schedule' as TabType, label: '日程', Icon: Calendar },
+          { id: 'insights' as TabType, label: '洞察', Icon: BarChart2 },
         ].map(({ id, label, Icon }) => (
           <button
             key={id}
